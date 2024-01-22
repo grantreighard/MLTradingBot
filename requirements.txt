@@ -1,0 +1,7 @@
+lumibot 
+alpaca-py
+torch 
+torchvision 
+torchaudio 
+transformers
+
