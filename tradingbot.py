@@ -16,6 +16,11 @@ load_dotenv()
 API_KEY = os.getenv('API_KEY')
 API_SECRET =  os.getenv('API_SECRET')
 BASE_URL = "https://paper-api.alpaca.markets"
+SYMBOL="SPY"
+RISK_AMOUNT=0.25
+TAKE_PROFIT_AMOUNT=0.15
+STOP_LOSS_AMOUNT=0.05
+MIN_PROBABILTY=0.9
 
 ALPACA_CREDS = {
     "API_KEY": API_KEY, 
@@ -24,7 +29,7 @@ ALPACA_CREDS = {
 }
 
 class MLTrader(Strategy): 
-    def initialize(self, symbol:str="SPY", cash_at_risk:float=.5): 
+    def initialize(self, symbol:str=SYMBOL, cash_at_risk:float=.5): 
         self.symbol = symbol
         self.sleeptime = "24H" 
         self.last_trade = None 
@@ -35,7 +40,7 @@ class MLTrader(Strategy):
     def position_sizing(self): 
         cash = self.get_cash() 
         last_price = self.get_last_price(asset=self.symbol, should_use_last_close=True)
-        quantity = round(cash * self.cash_at_risk / last_price,0)
+        quantity = round(cash * self.cash_at_risk / last_price, 0)
         return cash, last_price, quantity
 
     def get_dates(self): 
@@ -52,47 +57,48 @@ class MLTrader(Strategy):
 
     def on_trading_iteration(self):
         cash, last_price, quantity = self.position_sizing() 
+        print(cash, last_price)
         probability, sentiment = self.get_sentiment()
 
         if cash > last_price: 
-            if sentiment == "positive" and probability > .999: 
+            if sentiment == "positive" and probability > MIN_PROBABILTY: 
                 if self.last_trade == "sell": 
                     self.sell_all() 
                 order = self.create_order(
                     self.symbol, 
                     quantity, 
                     "buy", 
-                    type="bracket", 
-                    take_profit_price=last_price*1.20, 
-                    stop_loss_price=last_price*.95
+                    type="market", 
+                    take_profit_price=last_price * (1 + TAKE_PROFIT_AMOUNT), 
+                    stop_loss_price=last_price * (1 - STOP_LOSS_AMOUNT)
                 )
                 self.submit_order(order) 
                 self.last_trade = "buy"
-            elif sentiment == "negative" and probability > .999: 
+            elif sentiment == "negative" and probability > MIN_PROBABILTY: 
                 if self.last_trade == "buy": 
                     self.sell_all() 
                 order = self.create_order(
                     self.symbol, 
                     quantity, 
                     "sell", 
-                    type="bracket", 
-                    take_profit_price=last_price*.8, 
-                    stop_loss_price=last_price*1.05
+                    type="market", 
+                    take_profit_price=last_price * (1 - TAKE_PROFIT_AMOUNT), 
+                    stop_loss_price=last_price * (1 + STOP_LOSS_AMOUNT)
                 )
                 self.submit_order(order) 
                 self.last_trade = "sell"
 
-start_date = datetime(2020,1,1)
-end_date = datetime(2023,12,31) 
+start_date = datetime(2023, 1, 1)
+end_date = datetime(2023, 12, 31) 
 broker = Alpaca(ALPACA_CREDS) 
 strategy = MLTrader(name='mlstrat', broker=broker, 
-                    parameters={"symbol":"SPY", 
-                                "cash_at_risk":.5})
+                    parameters={"symbol": SYMBOL, 
+                                "cash_at_risk": RISK_AMOUNT})
 strategy.backtest(
     YahooDataBacktesting, 
     start_date, 
     end_date, 
-    parameters={"symbol":"SPY", "cash_at_risk":.5}
+    parameters={"symbol": SYMBOL, "cash_at_risk": RISK_AMOUNT}
 )
 # trader = Trader()
 # trader.add_strategy(strategy)

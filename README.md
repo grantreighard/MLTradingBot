@@ -10,7 +10,8 @@ Build a trader bot which looks at sentiment of live news events and trades appro
 3. Install deps `pip install -r requirements.txt`
 4. Copy the .env.example contents to a file called .env
 5. Update the `API_KEY` and `API_SECRET` with values from your Alpaca account in the .env file
-6. Run the bot `python tradingbot.py`
+6. Here is an [SSL error message fix for macOS](https://stackoverflow.com/questions/27835619/urllib-and-ssl-certificate-verify-failed-error)
+7. Run the bot `python tradingbot.py`
 
 <p>N.B. Torch installation instructions will vary depending on your operating system and hardware. See here for more: 
 <a href="pytorch.org/">PyTorch Installation Instructions</a></p>
